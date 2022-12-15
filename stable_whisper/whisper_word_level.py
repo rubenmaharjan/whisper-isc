@@ -70,7 +70,7 @@ def transcribe_word_level(
 
     verbose: bool
         Whether to display the decoded text (with finalized timestamps) to the console (Default: False)
-        User print_unstab for previous behavior of verbose but with token timestamps
+        Use print_unstab for previous behavior of verbose but with token timestamps
 
     temperature: Union[float, Tuple[float, ...]]
         Temperature for sampling. It can be a tuple of temperatures, which will be successfully used
@@ -203,9 +203,9 @@ def transcribe_word_level(
             best_of = kwargs.get("best_of", None)
 
         options = DecodingOptions(**kwargs, temperature=t)
-        results, ts_tokens, ts_logits_ = model.decode(segment, options, ts_num=ts_num, alpha=alpha,
+        results, ts_tokens, ts_logits_, tc = model.decode(segment, options, ts_num=ts_num, alpha=alpha,
                                                       suppress_ts_mask=suppress_ts_mask,
-                                                      suppress_word_ts=suppress_word_ts)
+                                                      suppress_word_ts=suppress_word_ts)  # my
 
         kwargs.pop("beam_size", None)  # no beam search for t > 0
         kwargs.pop("patience", None)  # no patience for t > 0
@@ -220,7 +220,7 @@ def transcribe_word_level(
             ]
             if any(needs_fallback):
                 options = DecodingOptions(**kwargs, temperature=t)
-                retries, r_ts_tokens, r_ts_logits = model.decode(segment[needs_fallback], options,
+                retries, r_ts_tokens, r_ts_logits, tc = model.decode(segment[needs_fallback], options,
                                                                  ts_num=ts_num, alpha=alpha,
                                                                  suppress_ts_mask=suppress_ts_mask,
                                                                  suppress_word_ts=suppress_word_ts)
@@ -229,7 +229,7 @@ def transcribe_word_level(
                     ts_tokens[original_index] = r_ts_tokens[retry_index]
                     ts_logits_[original_index] = r_ts_logits[retry_index]
 
-        return results, ts_tokens, ts_logits_
+        return results, ts_tokens, ts_logits_, tc
 
     seek = 0
     input_stride = exact_div(
@@ -255,7 +255,8 @@ def transcribe_word_level(
     def add_segment(
             *, offset: float, start: float, end: float, text_tokens: Tensor, result: DecodingResult,
             start_timestamps: list = None, end_timestamps: list = None, word_timestamps: Tensor = None,
-            start_ts_logits: list = None, end_ts_logits: list = None, word_ts_logits: Tensor = None
+            start_ts_logits: list = None, end_ts_logits: list = None, word_ts_logits: Tensor = None,
+            tc_logits: Tensor = None
     ):
         no_eot_mask = text_tokens < tokenizer.eot
         text_tokens_no_eot = text_tokens[no_eot_mask]
@@ -296,7 +297,8 @@ def transcribe_word_level(
                 "alt_end_timestamps": end_timestamps,
                 "end_ts_logits": end_ts_logits,
                 "unstable_word_timestamps": word_timestamps,
-                'anchor_point': False
+                'anchor_point': False,
+                "confidence_score": tc_logits  # my
             }
         )
         if print_unstab or (verbose and not stab):
@@ -369,7 +371,7 @@ def transcribe_word_level(
                 suppress_ts_mask = None
 
             decode_options["prompt"] = all_tokens[prompt_reset_since:]
-            result, finalized_ts_tokens, ts_logits = decode_with_fallback(segment,
+            result, finalized_ts_tokens, ts_logits, tc = decode_with_fallback(segment,
                                                                           suppress_ts_mask=suppress_ts_mask)
 
             result = result[0]
@@ -396,6 +398,7 @@ def transcribe_word_level(
                     sliced_tokens = tokens[last_slice:current_slice]
                     sliced_ts_tokens = finalized_ts_tokens[last_slice:current_slice]
                     sliced_ts_logits = ts_logits[last_slice:current_slice]
+                    sliced_tc = tc[last_slice:current_slice]
                     start_timestamp_position = (
                             sliced_tokens[0].item() - tokenizer.timestamp_begin
                     )
@@ -417,7 +420,8 @@ def transcribe_word_level(
                         word_timestamps=word_ts[1:-1],
                         start_ts_logits=sliced_ts_logits[0].tolist(),
                         end_ts_logits=sliced_ts_logits[-1].tolist(),
-                        word_ts_logits=sliced_ts_logits[1:-1]
+                        word_ts_logits=sliced_ts_logits[1:-1],
+                        tc_logits=sliced_tc[1:-1]  # my
                     )
                     last_slice = current_slice
                 last_timestamp_position = (
@@ -443,7 +447,8 @@ def transcribe_word_level(
                     text_tokens=tokens,
                     result=result,
                     word_timestamps=word_ts,
-                    word_ts_logits=ts_logits
+                    word_ts_logits=ts_logits,
+                    tc_logits=sliced_tc
                 )
 
                 seek += segment.shape[-1]
@@ -461,9 +466,13 @@ def transcribe_word_level(
     if len(all_segments) > 1 and all_segments[-1]['alt_start_timestamps'] is None:
         all_segments[-1]['alt_start_timestamps'] = all_segments[-2]['alt_end_timestamps']
 
+    # # my prepare confidence
+    # all_segments = my_prepare_confidence_and_words(tokenizer, all_segments)  # side effect
+
     if stab:
         all_segments = stabilize_timestamps(all_segments, top_focus=top_focus)
         add_whole_word_ts(tokenizer, all_segments,
+                          merge_non_space=True,  # my
                           prepend_punctuations=prepend_punctuations,
                           append_punctuations=append_punctuations)
         if verbose:
@@ -472,9 +481,11 @@ def transcribe_word_level(
                 print(f'[{format_timestamp(seg_["start"])} --> {format_timestamp(seg_["end"])}] "{seg_["text"]}"')
                 if seg_['word_timestamps']:
                     ts_str = (f' ->[{format_timestamp(ts_["timestamp"])}] "{ts_["word"].strip()}"' for ts_ in
-                              seg_['word_timestamps'])
+                               seg_['word_timestamps'])
                     print('\n'.join(ts_str), end='\n\n')
-
+        import pickle
+        with open('filename.pickle', 'wb') as fh:
+            pickle.dump(all_segments, fh, protocol=pickle.HIGHEST_PROTOCOL)
     return dict(text=tokenizer.decode(all_tokens[len(initial_prompt):]), segments=all_segments, language=language)
 
 
@@ -519,7 +530,7 @@ class GreedyDecoderWordLevel(GreedyDecoder):
         tokens = torch.cat([tokens, next_tokens[:, None]], dim=-1)
 
         completed = (tokens[:, -1] == self.eot).all()
-        return tokens, completed
+        return tokens, completed, current_logprobs
 
     def finalize(self, tokens: Tensor, sum_logprobs: Tensor):
         # make sure each sequence has at least one EOT token at the end
@@ -671,6 +682,7 @@ class DecodingTaskWordLevel(DecodingTask):
         n_batch = tokens.shape[0]
         sum_logprobs: Tensor = torch.zeros(n_batch, device=audio_features.device)
         no_speech_probs = [np.nan] * n_batch
+        token_confidences = []  # my
 
         try:
             for i in range(self.sample_len):
@@ -697,19 +709,21 @@ class DecodingTaskWordLevel(DecodingTask):
                     logit_filter.apply(logits, tokens)
 
                 # expand the tokens tensor with the selected next tokens
-                tokens, completed = self.decoder.update_with_ts(tokens, logits, sum_logprobs, ts)
+                tokens, completed, current_logprobs = self.decoder.update_with_ts(tokens, logits, sum_logprobs, ts)
+                # my
+                token_confidences.append((current_logprobs.tolist()[0], tokens.tolist()[0][-1]))
 
                 if completed or tokens.shape[-1] > self.n_ctx:
                     break
         finally:
             self.inference.cleanup_caching()
 
-        return tokens, sum_logprobs, no_speech_probs
+        return tokens, sum_logprobs, no_speech_probs, token_confidences  # my: token_confidences
 
     # modified version of whisper.DecodingTask.run
     @torch.no_grad()
     def run(self, mel: Tensor) \
-            -> Union[List[DecodingResult], Tuple[List[DecodingResult], List[List[int]]]]:
+        -> Union[List[DecodingResult], Tuple[List[DecodingResult], List[List[int]], List[int]]]:
         self.decoder.reset()
         tokenizer: Tokenizer = self.tokenizer
         n_audio: int = mel.shape[0]
@@ -730,7 +744,7 @@ class DecodingTaskWordLevel(DecodingTask):
         tokens = tokens.repeat_interleave(self.n_group, dim=0).to(audio_features.device)
 
         # call the main sampling loop
-        tokens, sum_logprobs, no_speech_probs = self._main_loop(audio_features, tokens)
+        tokens, sum_logprobs, no_speech_probs, tc = self._main_loop(audio_features, tokens)
 
         # reshape the tensors to have (n_audio, n_group) as the first two dimensions
         audio_features = audio_features[:: self.n_group]
@@ -761,19 +775,19 @@ class DecodingTaskWordLevel(DecodingTask):
             raise RuntimeError(f"inconsistent result lengths: {list(map(len, fields))}")
 
         return [
-                   DecodingResult(
-                       audio_features=features,
-                       language=language,
-                       tokens=tokens,
-                       text=text,
-                       avg_logprob=avg_logprob,
-                       **(dict(no_caption_prob=no_speech_prob) if hasattr(DecodingResult, 'no_caption_prob') else dict(
-                           no_speech_prob=no_speech_prob)),
-                       temperature=self.options.temperature,
-                       compression_ratio=compression_ratio(text),
-                   )
-                   for text, language, tokens, features, avg_logprob, no_speech_prob in zip(*fields)
-               ], ts
+            DecodingResult(
+                   audio_features=features,
+                   language=language,
+                   tokens=tokens,
+                   text=text,
+                   avg_logprob=avg_logprob,
+                   **(dict(no_caption_prob=no_speech_prob) if hasattr(DecodingResult, 'no_caption_prob') else dict(
+                       no_speech_prob=no_speech_prob)),
+                   temperature=self.options.temperature,
+                   compression_ratio=compression_ratio(text),
+               )
+               for text, language, tokens, features, avg_logprob, no_speech_prob in zip(*fields)
+        ], ts, tc  # my: tc
 
 
 # modified version of whisper.decoding.decode
@@ -818,7 +832,7 @@ def decode_word_level(model: "Whisper", mel: Tensor, options: DecodingOptions = 
     if single:
         mel = mel.unsqueeze(0)
 
-    result, ts = DecodingTaskWordLevel(model, options,
+    result, ts, tc = DecodingTaskWordLevel(model, options,
                                        ts_num=ts_num,
                                        alpha=alpha,
                                        suppress_ts_mask=suppress_ts_mask,
@@ -832,7 +846,7 @@ def decode_word_level(model: "Whisper", mel: Tensor, options: DecodingOptions = 
         ts_tokens = [ts_[1] for ts_ in ts]
         ts_logits = [ts_[0] for ts_ in ts]
 
-    return result, ts_tokens, ts_logits
+    return result, ts_tokens, ts_logits, tc # my: tc
 
 
 def modify_model(model: Whisper):

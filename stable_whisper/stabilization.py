@@ -454,16 +454,26 @@ def add_whole_word_ts(tokenizer: Tokenizer, segments: Union[List[dict], dict], m
               f'whole-word timestamps cannot be added to the following segments: {tuple(missing_idx)}')
 
     failed_idx = []
+    # calc min and max for confidence my
+    confidences = []
+    for seg in segments:
+        confidences.extend([c[0] for c in seg['confidence_score']])
+    confidence_min = min(confidences)
+    confidence_max = max(confidences)
 
     for seg_idx, seg in enumerate(segments):
         if seg.get('word_timestamps'):
             prev_idx = 0
             remaining_text = seg['text']
+            # seg['avg_logprob'] = (seg['avg_logprob'] - confidence_min)/(confidence_max - confidence_min) # my
             has_prepend = False
             whole_word_timestamps: List[dict] = []
             for wts_idx in range(1, len(seg['word_timestamps']) + 1):
                 max_ts = seg['word_timestamps'][wts_idx - 1]['timestamp']
                 tokens = [wts['token'] for wts in seg['word_timestamps'][prev_idx: wts_idx]]
+                confidence_l = [c[0] for c in seg['confidence_score'][prev_idx: wts_idx]]
+                confidence = sum(confidence_l)/len(confidence_l)  # my
+                confidence = (confidence - confidence_min)/(confidence_max - confidence_min)  # rescale to 0-1
                 temp_whole_word = tokenizer.decode(tokens)
                 if temp_whole_word == remaining_text[:len(temp_whole_word)]:
                     prev_idx = wts_idx
@@ -472,11 +482,12 @@ def add_whole_word_ts(tokenizer: Tokenizer, segments: Union[List[dict], dict], m
                             temp_whole_word not in append_punctuations and
                             not has_prepend) or not len(whole_word_timestamps):
                         has_prepend = temp_whole_word.strip() in prepend_punctuations
-                        whole_word_timestamps.append(dict(word=temp_whole_word, timestamp=max_ts))
+                        whole_word_timestamps.append(dict(word=temp_whole_word, timestamp=max_ts, confidence=confidence))
                     else:
                         has_prepend = False
                         whole_word_timestamps[-1]['word'] += temp_whole_word
                         whole_word_timestamps[-1]['timestamp'] = max_ts
+                        whole_word_timestamps[-1]['confidence'] = confidence
             if remaining_text:
                 failed_idx.append(seg_idx)
                 whole_word_timestamps = []

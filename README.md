@@ -1,23 +1,24 @@
-# Stabilizing Timestamps for Whisper
+# Stabilizing Timestamps and confidence scores for Whisper
 
 ## Description
 This script modifies methods of Whisper's model to gain access to the predicted timestamp tokens of each word (token) without needing additional inference. It also stabilizes the timestamps down to the word (token) level to ensure chronology. Additionally, it can suppress gaps in speech for more accurate timestamps.
 
 ![image](https://user-images.githubusercontent.com/28970749/192950141-40ac8cbd-ccac-45da-b563-f8144d22c54e.png)
 
+Confidence score is a log_softmax which is used for sum_logprobs also.
+
 ## TODO
 - [ ] Add function to stabilize with multiple inferences
-- [x] Add word timestamping (previously only token based)
 
 ## Dependency
 * [Whisper](https://github.com/openai/whisper)
 
 ## Setup
-#### Option 1: Install Whisper+stable-ts (one line)
+#### Option 1: Install Whisper+stable-ts-con (one line)
 ```
-pip install git+https://github.com/jianfch/stable-ts.git
+pip install git+https://github.com/Anoncheg1/stable-ts-con.git
 ```
-#### Option 2: Install Whisper (repo) and stable-ts (PyPI) separately
+#### Option 2 (without confidence): Install Whisper (repo) and stable-ts (PyPI) separately
 1. Install [Whisper](https://github.com/openai/whisper#setup)
 2. Check if Whisper is installed correctly by running a quick test
 ```python
@@ -47,7 +48,7 @@ stab_segments = stabilize_timestamps(results, top_focus=True)
 
 ### Generate .srt with stable timestamps
 ```python
-# word-level 
+# word-level
 from stable_whisper import results_to_word_srt
 # after you get results from modified model
 # this treats a word timestamp as end time of the word
