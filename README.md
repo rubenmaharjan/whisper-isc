@@ -5,7 +5,12 @@ This script modifies methods of Whisper's model to gain access to the predicted 
 
 ![image](https://user-images.githubusercontent.com/28970749/192950141-40ac8cbd-ccac-45da-b563-f8144d22c54e.png)
 
-Confidence score is a log_softmax which is used for sum_logprobs also.
+Confidence score is a log_softmax used for sum_logprobs also.
+```python
+F.log_softmax(logits.float(), dim=-1)
+```
+![Screenshot_2022-12-15_12-25-55](https://user-images.githubusercontent.com/2093802/207827789-7e121a63-2dd6-4dc0-9618-b494bce47a1a.png)
+
 
 ## TODO
 - [ ] Add function to stabilize with multiple inferences
