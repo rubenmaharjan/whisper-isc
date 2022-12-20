@@ -448,7 +448,7 @@ def transcribe_word_level(
                     result=result,
                     word_timestamps=word_ts,
                     word_ts_logits=ts_logits,
-                    tc_logits=sliced_tc
+                    tc_logits=tc
                 )
 
                 seek += segment.shape[-1]
