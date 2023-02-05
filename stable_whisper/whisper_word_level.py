@@ -16,7 +16,7 @@ from whisper.tokenizer import Tokenizer, get_tokenizer
 from types import MethodType
 from itertools import repeat
 from stable_whisper.audio import load_audio_waveform_img, remove_lower_quantile, wave_to_ts_filter
-from stable_whisper.stabilization import stabilize_timestamps, add_whole_word_ts
+from stabilization import *
 from tqdm import tqdm
 
 

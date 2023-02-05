@@ -1,4 +1,4 @@
-# Stabilizing Timestamps and confidence scores for Whisper
+# Confidence scores for Whisper for ISC 
 
 ## Description
 This script modifies methods of Whisper's model to gain access to the predicted timestamp tokens of each word (token) without needing additional inference. It also stabilizes the timestamps down to the word (token) level to ensure chronology. Additionally, it can suppress gaps in speech for more accurate timestamps.
@@ -31,9 +31,9 @@ import whisper
 model = whisper.load_model('base')
 assert model.transcribe('audio.mp3').get('segments')
 ```
-3. Install stable-ts
+3. Install whisper-isc
 ```commandline
-pip install stable-ts
+pip install git+https://github.com/rubenmaharjan/whisper-isc.git@main
 ```
 
 ### Executing script

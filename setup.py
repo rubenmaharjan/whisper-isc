@@ -12,14 +12,14 @@ def read_me() -> str:
 
 
 setup(
-    name="stable-ts-con",
+    name="whisper-isc",
     version=version(),
     description="Timestamps and confidence score for words of OpenAI's Whisper outputs down to word-level.",
     long_description=read_me(),
     long_description_content_type='text/markdown',
     python_requires=">=3.7",
-    author="Vit",
-    url="https://github.com/Anoncheg1/stable-ts-con",
+    author="ruben",
+    url="https://github.com/rubenmaharjan/whisper-isc",
     license="MIT",
     packages=['stable_whisper'],
     install_requires=[
