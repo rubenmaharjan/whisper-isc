@@ -2,7 +2,7 @@ from setuptools import setup
 
 
 def version() -> str:
-    with open('./stable_whisper/_version.py') as f:
+    with open('./isc_whisper/_version.py') as f:
         return f.read().split('=')[-1].strip().strip('"').strip("'")
 
 
