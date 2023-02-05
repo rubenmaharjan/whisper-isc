@@ -21,7 +21,7 @@ setup(
     author="ruben",
     url="https://github.com/rubenmaharjan/whisper-isc",
     license="MIT",
-    packages=['stable_whisper'],
+    packages=['isc_whisper'],
     install_requires=[
       "whisper @ git+https://github.com/openai/whisper.git"
     ],
