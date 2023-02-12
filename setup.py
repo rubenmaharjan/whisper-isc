@@ -23,9 +23,9 @@ setup(
     license="MIT",
     packages=['isc_whisper'],
     install_requires=[
-      "openai-whisper @ git+https://github.com/openai/whisper.git"
+        "openai-whisper @ git+https://github.com/openai/whisper.git"
     ],
-        entry_points={
+    entry_points={
         'console_scripts': [
             'whisper-isc = isc_whisper.cli:main'
         ]

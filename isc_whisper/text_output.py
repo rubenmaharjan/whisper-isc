@@ -1,7 +1,7 @@
 import json
 import os
 from typing import List
-from stable_whisper.stabilization import group_word_timestamps, tighten_timestamps, MIN_DUR
+from .stabilization import group_word_timestamps, tighten_timestamps, MIN_DUR
 
 __all__ = ['results_to_sentence_srt', 'results_to_word_srt', 'results_to_token_srt',
            'results_to_sentence_word_ass', 'to_srt', 'results_to_srt', 'save_as_json']
