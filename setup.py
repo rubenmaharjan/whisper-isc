@@ -23,7 +23,7 @@ setup(
     license="MIT",
     packages=['isc_whisper'],
     install_requires=[
-      "whisper @ git+https://github.com/openai/whisper.git"
+      "openai-whisper @ git+https://github.com/openai/whisper.git"
     ],
     include_package_data=False
 )
