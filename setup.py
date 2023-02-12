@@ -27,7 +27,7 @@ setup(
     ],
     entry_points={
         'console_scripts': [
-            'whisper-isc = isc_whisper.cli:main'
+            'whisper-isc = isc_whisper.evaluate:cli'
         ]
     },
     include_package_data=False
