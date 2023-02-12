@@ -25,5 +25,10 @@ setup(
     install_requires=[
       "openai-whisper @ git+https://github.com/openai/whisper.git"
     ],
+        entry_points={
+        'console_scripts': [
+            'whisper-isc = isc_whisper.cli:main'
+        ]
+    }
     include_package_data=False
 )
