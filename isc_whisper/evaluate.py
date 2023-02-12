@@ -7,7 +7,7 @@ import numpy as np
 
 from whisper import transcribe
 from .utils import optional_int, optional_float, str2bool, get_writer
-from whisper import LANGUAGES, TO_LANGUAGE_CODE
+from whisper.tokenizer import LANGUAGES, TO_LANGUAGE_CODE
 
 
 def cli():
