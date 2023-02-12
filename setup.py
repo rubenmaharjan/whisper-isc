@@ -29,6 +29,6 @@ setup(
         'console_scripts': [
             'whisper-isc = isc_whisper.cli:main'
         ]
-    }
+    },
     include_package_data=False
 )
