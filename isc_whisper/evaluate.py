@@ -26,7 +26,7 @@ def cli():
     parser.add_argument("--output_dir", "-o", type=str,
                         default=".", help="directory to save the outputs")
     parser.add_argument("--output_format", "-f", type=str, default="all", choices=[
-                        "txt", "vtt", "srt", "tsv", "json", "all"], help="format of the output file; if not specified, all available formats will be produced")
+                        "txt", "vtt", "srt", "tsv", "json", "csv", "all"], help="format of the output file; if not specified, all available formats will be produced")
     parser.add_argument("--verbose", type=str2bool, default=True,
                         help="whether to print out the progress and debug messages")
 
