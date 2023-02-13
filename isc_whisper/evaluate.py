@@ -5,7 +5,7 @@ import os
 import warnings
 import numpy as np
 
-from whisper_word_level import transcribe
+from isc_whisper.whisper_word_level import load_model, transcribe_word_level
 from .utils import optional_int, optional_float, str2bool, get_writer
 from whisper.tokenizer import LANGUAGES, TO_LANGUAGE_CODE
 
@@ -89,10 +89,9 @@ def cli():
     if (threads := args.pop("threads")) > 0:
         torch.set_num_threads(threads)
 
-    from whisper_word_level import load_model
     model = load_model(model_name, device=device, download_root=model_dir)
 
     writer = get_writer(output_format, output_dir)
     for audio_path in args.pop("audio"):
-        result = transcribe(model, audio_path, temperature=temperature, **args)
+        result = transcribe_word_level(model, audio_path, temperature=temperature, **args)
         writer(result, audio_path)
