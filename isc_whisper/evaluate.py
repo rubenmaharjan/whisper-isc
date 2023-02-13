@@ -5,7 +5,7 @@ import os
 import warnings
 import numpy as np
 
-from whisper import transcribe
+from whisper_word_level import transcribe
 from .utils import optional_int, optional_float, str2bool, get_writer
 from whisper.tokenizer import LANGUAGES, TO_LANGUAGE_CODE
 
@@ -89,7 +89,7 @@ def cli():
     if (threads := args.pop("threads")) > 0:
         torch.set_num_threads(threads)
 
-    from . import load_model
+    from whisper_word_level import load_model
     model = load_model(model_name, device=device, download_root=model_dir)
 
     writer = get_writer(output_format, output_dir)
