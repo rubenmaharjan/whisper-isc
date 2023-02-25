@@ -91,10 +91,6 @@ def cli():
         torch.set_num_threads(threads)
 
     model = load_model(model_name, device=device, download_root=model_dir)
-    
-    print("Hello 1", model)
-    print("Hello 1.1", temperature)
-    print("Hello 1.2", args)
 
     writer = get_writer(output_format, output_dir)
     for audio_path in args.pop("audio"):
