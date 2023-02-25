@@ -1,6 +1,7 @@
 from .stabilization import *
 from .text_output import *
 from .whisper_word_level import *
+from .utils import *
 from typing import List
 
 __version__ = "1.0.1"

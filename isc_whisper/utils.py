@@ -149,6 +149,7 @@ class WriteCSV(ResultWriter):
     extension = "csv"
 
     def write_result(self, result: dict, file: TextIO):
+        print("hello 3")
         for segment in result["segments"]:
             for timestamp in segment['whole_word_timestamps']:
                 csv_output = timestamp['word']+',' + \

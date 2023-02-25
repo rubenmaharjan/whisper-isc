@@ -650,7 +650,7 @@ class BeamSearchDecoderWordLevel(BeamSearchDecoder):
         completed = all(
             len(sequences) >= self.max_candidates for sequences in self.finished_sequences
         )
-        return tokens, completed
+        return tokens, completed, scores
 
     def finalize(self, preceding_tokens: Tensor, sum_logprobs: Tensor):
         # collect all finished sequences, including patience, and add unfinished ones if not enough
@@ -745,8 +745,12 @@ class DecodingTaskWordLevel(DecodingTask):
                 tokens, completed, current_logprobs = self.decoder.update_with_ts(
                     tokens, logits, sum_logprobs, ts)
                 # my
-                token_confidences.append(
-                    (current_logprobs.tolist()[0], tokens.tolist()[0][-1]))
+                if hasattr(self.decoder, 'beam_size'):
+                    token_confidences.append(
+                        (list(current_logprobs.values())[0], tokens.tolist()[0]))
+                else:
+                    token_confidences.append(
+                        (current_logprobs.tolist()[0], tokens.tolist()[0][-1]))
 
                 if completed or tokens.shape[-1] > self.n_ctx:
                     break
