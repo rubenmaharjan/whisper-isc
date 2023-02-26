@@ -151,8 +151,8 @@ class WriteCSV(ResultWriter):
     def write_result(self, result: dict, file: TextIO):
         for segment in result["segments"]:
             for timestamp in segment['whole_word_timestamps']:
-                csv_output = timestamp['word']+',' + \
-                    timestamp['timestamp']+','+timestamp['confidence']+'\n'
+                csv_output = str(timestamp['word'])+'|' + \
+                    str(timestamp['timestamp'])+'|'+str(timestamp['confidence'])
                 print(csv_output, file=file, flush=True)
 
 
