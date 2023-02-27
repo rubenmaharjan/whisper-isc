@@ -36,25 +36,34 @@ assert model.transcribe('audio.mp3').get('segments')
 pip install git+https://github.com/rubenmaharjan/whisper-isc.git@main
 ```
 
+### Executing script from command line
+```bash
+whisper-isc audio.mp3 --output_format csv --output_format txt --model=tiny --language=en
+# outpur_format generates a file saved in the current directory
+# CSV is seperated with |
+# word | timestamp | confidence 
+```
+
 ### Executing script
 ```python
-from stable_whisper import load_model
+from isc_whisper import load_model
 
 model = load_model('base')
 # modified model should run just like the regular model but with additional hyperparameters and extra data in results
 results = model.transcribe('audio.mp3')
 stab_segments = results['segments']
 first_segment_word_timestamps = stab_segments[0]['whole_word_timestamps']
+# whole_word_timestamps key has the word, timestamp and confidence
 
 # or to get token timestamps that adhere more to the top prediction
-from stable_whisper import stabilize_timestamps
+from isc_whisper import stabilize_timestamps
 stab_segments = stabilize_timestamps(results, top_focus=True)
 ```
 
 ### Generate .srt with stable timestamps
 ```python
 # word-level
-from stable_whisper import results_to_word_srt
+from isc_whisper import results_to_word_srt
 # after you get results from modified model
 # this treats a word timestamp as end time of the word
 # and combines words if their timestamps overlap
@@ -62,7 +71,7 @@ results_to_word_srt(results, 'audio.srt')  # combine_compound=True will merge wo
 ```
 ```python
 # sentence/phrase-level
-from stable_whisper import results_to_sentence_srt
+from isc_whisper import results_to_sentence_srt
 # after you get results from modified model
 results_to_sentence_srt(results, 'audio.srt')
 # below is from large model default settings
@@ -73,13 +82,18 @@ https://user-images.githubusercontent.com/28970749/202782436-0d56140b-5d52-4f33-
 
 ```python
 # sentence/phrase-level & word-level
-from stable_whisper import results_to_sentence_word_ass
+from isc_whisper import results_to_sentence_word_ass
 # after you get results from modified model
 results_to_sentence_word_ass(results, 'audio.ass')
 # below is from large model default settings
 ```
 
 https://user-images.githubusercontent.com/28970749/202782412-dfa027f8-7073-4023-8ce5-285a2c26c03f.mp4
+
+#### Confidence Metrics
+* To get confidence few lines have been added to ***whisper_word_level.py*** file.
+* The file has been commented with #my before all the changes made.
+
 
 #### Additional Info
 * Since the sentence/segment-level timestamps are predicted directly, they are always more accurate and precise than word/token-level timestamps.

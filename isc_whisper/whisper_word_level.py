@@ -650,6 +650,7 @@ class BeamSearchDecoderWordLevel(BeamSearchDecoder):
         completed = all(
             len(sequences) >= self.max_candidates for sequences in self.finished_sequences
         )
+        # my
         return tokens, completed, scores
 
     def finalize(self, preceding_tokens: Tensor, sum_logprobs: Tensor):
