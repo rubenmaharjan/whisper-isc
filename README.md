@@ -19,9 +19,9 @@ F.log_softmax(logits.float(), dim=-1)
 * [Whisper](https://github.com/openai/whisper)
 
 ## Setup
-#### Option 1: Install Whisper+stable-ts-con (one line)
+#### Option 1: Install Whisper ISC (one line)
 ```
-pip install git+https://github.com/Anoncheg1/stable-ts-con.git
+pip install it+https://github.com/rubenmaharjan/whisper-isc.git@main
 ```
 #### Option 2 (without confidence): Install Whisper (repo) and stable-ts (PyPI) separately
 1. Install [Whisper](https://github.com/openai/whisper#setup)
@@ -38,10 +38,16 @@ pip install git+https://github.com/rubenmaharjan/whisper-isc.git@main
 
 ### Executing script from command line
 ```bash
-whisper-isc audio.mp3 --output_format csv --output_format txt --model=tiny --language=en
 # outpur_format generates a file saved in the current directory
 # CSV is seperated with |
 # word | timestamp | confidence 
+whisper-isc audio.mp3 --output_format csv --model=tiny --language=en
+
+# multiple file format generation
+whisper-isc audio.mp3 --output_format csv --output_format txt --model=tiny --language=en
+
+# multiple file format generation and specific directory to save files
+whisper-isc audio.mp3 --output_dir /path/to/target/dir --output_format csv --output_format txt --model=tiny --language=en
 ```
 
 ### Executing script
